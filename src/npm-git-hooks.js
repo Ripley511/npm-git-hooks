@@ -86,9 +86,9 @@ function runTask(task, pkg) {
   try {
     // Launch the task with i/o set to default shell
     process.chdir(pkg.absolute);
-    console.log('\n********************************************************************************************************\n');
+    console.log('**********\n');
     console.log(`npm-git-hooks: RUNNING: "${task}" in ${pkg.absolute}`);
-    console.log('\n********************************************************************************************************\n');
+    console.log('**********\n');
     shell.exec(task, {'stdio': [0, 1, 2]});
   } catch (e) {
     throw new handlers.RunTaskError(task, pkg.name);
@@ -124,9 +124,8 @@ function runTasks(config, pkg, files) {
 function run(operation, fileList) {
   const repoPath = git.getRootDir();
   const errors = [];
+  const packages = findAllPackages(repoPath);
   return new Promise((resolve, reject) => {
-    const packages = findAllPackages(repoPath);
-    console.log(packages);
     packages.forEach(pkg => {
       try {
         // Launch tasks for every package found before pushing
@@ -137,6 +136,7 @@ function run(operation, fileList) {
           return;
         } else if (!config.enabled) {
           console.log(`Git hooks disabled for project ${pkg.name}, moving on...`);
+          return;
         }
         const filePattern = buildFilePattern(config.restrictions, pkg.relative);
         const files = (typeof fileList === 'boolean') ? fileList : fileList.some(file => filePattern.exec(file.toString().trim()));
@@ -144,11 +144,11 @@ function run(operation, fileList) {
       } catch (e) {
         if (e instanceof handlers.RunTaskError) {
           // We want to stop the process immediately with a falsy exit code if the error comes from running a task
-          console.error('\n**********');
+          console.error('\n*************');
           console.error(e.message);
           console.error('Stacktrace:\n');
           console.error(e.stack);
-          console.error('***********\n');
+          console.error('*************\n');
           process.exit(1);
         } else {
           // Otherwise let the errorCallback deal with the list of potential errors
