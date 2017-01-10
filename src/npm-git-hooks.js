@@ -131,6 +131,7 @@ function run(operation, fileList) {
       console.log(pkg);
       try {
         // Launch tasks for every package found before pushing
+        console.log(require(pkg.absolute));
         const config = getPackageConfig(require(pkg.absolute), operation);
         const user = git.getUsername();
         if (config.restrictions['skip-users'].indexOf(user) >= 0) {
