@@ -127,6 +127,7 @@ function run(operation, fileList) {
   const packages = findAllPackages(repoPath);
   return new Promise((resolve, reject) => {
     packages.forEach(pkg => {
+      console.log(pkg);
       try {
         // Launch tasks for every package found before pushing
         const config = getPackageConfig(require(pkg.absolute), operation);
