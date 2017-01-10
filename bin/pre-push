@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
-const handlers = require('../lib/handlers');
 const git = require('../lib/git');
-const run = require('../src/npm-git-hooks').run;
 
 let fileList;
 
@@ -20,6 +18,4 @@ try {
   process.exit(1);
 }
 
-run('pre-push', fileList)
-  .then(handlers.successCallback)
-  .catch(handlers.errorCallback);
+require('../src/npm-git-hooks').run('pre-push', fileList);

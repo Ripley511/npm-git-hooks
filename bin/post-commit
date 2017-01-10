@@ -1,8 +1,2 @@
 #!/usr/bin/env node
-
-const handlers = require('../lib/handlers');
-const run = require('../src/npm-git-hooks').run;
-
-run('post-commit', true)
-  .then(handlers.successCallback)
-  .catch(handlers.errorCallback);
+require('../src/npm-git-hooks').run('post-commit', true);

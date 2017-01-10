@@ -14,7 +14,6 @@
     "test": "test"
   },
   "dependencies": {
-    "bluebird": "^3.4.7",
     "shelljs": "^0.7.5"
   },
   "devDependencies": {

@@ -1,7 +1,6 @@
 'use strict';
 
 const shell = require('shelljs');
-const Promise = require('bluebird');
 
 const handlers = require('../lib/handlers');
 const utils = require('../lib/utils');
@@ -124,44 +123,42 @@ function runTasks(config, pkg, files) {
 function run(operation, fileList) {
   const repoPath = git.getRootDir();
   const errors = [];
-  const packages = findAllPackages(repoPath);
-  return new Promise((resolve, reject) => {
-    packages.forEach(pkg => {
-      try {
-        // Launch tasks for every package found before pushing
-        const pkgPath = utils.resolve(pkg.absolute, 'package.json');
-        const config = getPackageConfig(require(pkgPath));
-        const user = git.getUsername();
-        if (config.restrictions['skip-users'].indexOf(user) >= 0) {
-          console.log(`User ${user} does not need to run ${operation} tasks in ${pkg.name}, moving on...`);
-          return;
-        } else if (!config.enabled) {
-          console.log(`Git hooks disabled for project ${pkg.name}, moving on...`);
-          return;
-        }
-        const filePattern = buildFilePattern(config.restrictions, pkg.relative);
-        const files = (typeof fileList === 'boolean') ? fileList : fileList.some(file => filePattern.exec(file.toString().trim()));
-        runTasks(config[operation], pkg, files);
-      } catch (e) {
-        if (e instanceof handlers.RunTaskError) {
-          // We want to stop the process immediately with a falsy exit code if the error comes from running a task
-          console.error('\n*************');
-          console.error(e.message);
-          console.error('Stacktrace:\n');
-          console.error(e.stack);
-          console.error('*************\n');
-          process.exit(1);
-        } else {
-          // Otherwise let the errorCallback deal with the list of potential errors
-          errors.push(e);
-          return;
-        }
+
+  findAllPackages(repoPath).forEach(pkg => {
+    try {
+      // Launch tasks for every package found before pushing
+      const pkgPath = utils.resolve(pkg.absolute, 'package.json');
+      const config = getPackageConfig(require(pkgPath));
+      const user = git.getUsername();
+      if (config.restrictions['skip-users'].indexOf(user) >= 0) {
+        console.log(`User ${user} does not need to run ${operation} tasks in ${pkg.name}, moving on...`);
+        return;
+      } else if (!config.enabled) {
+        console.log(`Git hooks disabled for project ${pkg.name}, moving on...`);
+        return;
       }
-    });
-    if (errors.length) {
-      reject(errors);
-    } else {
-      resolve(operation);
+      const filePattern = buildFilePattern(config.restrictions, pkg.relative);
+      const files = (typeof fileList === 'boolean') ? fileList : fileList.some(file => filePattern.exec(file.toString().trim()));
+      runTasks(config[operation], pkg, files);
+    } catch (e) {
+      if (e instanceof handlers.RunTaskError) {
+        // We want to stop the process immediately with a falsy exit code if the error comes from running a task
+        console.error('\n*************');
+        console.error(e.message);
+        console.error('Stacktrace:\n');
+        console.error(e.stack);
+        console.error('*************\n');
+        process.exit(1);
+      } else {
+        // Otherwise let the errorCallback deal with the list of potential errors
+        errors.push(e);
+        return;
+      }
     }
   });
+  if (errors.length) {
+    handlers.errorCallback(errors);
+  } else {
+    handlers.successCallback(operation);
+  }
 }
