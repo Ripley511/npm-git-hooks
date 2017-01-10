@@ -125,7 +125,9 @@ function run(operation, fileList) {
   const repoPath = git.getRootDir();
   const errors = [];
   return new Promise((resolve, reject) => {
-    findAllPackages(repoPath).forEach(pkg => {
+    const packages = findAllPackages(repoPath);
+    console.log(packages);
+    packages.forEach(pkg => {
       try {
         // Launch tasks for every package found before pushing
         const config = getPackageConfig(require(pkg.absolute), operation);
@@ -142,11 +144,11 @@ function run(operation, fileList) {
       } catch (e) {
         if (e instanceof handlers.RunTaskError) {
           // We want to stop the process immediately with a falsy exit code if the error comes from running a task
-          console.error('\n********************************************************************************************************\n');
+          console.error('\n**********');
           console.error(e.message);
-          console.error('\nStacktrace:\n');
+          console.error('Stacktrace:\n');
           console.error(e.stack);
-          console.error('\n********************************************************************************************************\n');
+          console.error('***********\n');
           process.exit(1);
         } else {
           // Otherwise let the errorCallback deal with the list of potential errors
