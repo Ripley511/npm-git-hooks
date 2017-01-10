@@ -37,7 +37,6 @@ function findAllPackages(root) {
  * @return {Object} config
  */
 function getPackageConfig(pkg, hook) {
-  console.log(pkg);
   const config = pkg && pkg['npm-git-hooks'] && (hook ? pkg['npm-git-hooks'][hook] : true);
   if (!config) {
     throw new handlers.NoConfigError(`No config was found for ${pkg.name} project`);
@@ -131,7 +130,7 @@ function run(operation, fileList) {
       try {
         // Launch tasks for every package found before pushing
         const pkgPath = utils.resolve(pkg.absolute, 'package.json');
-        const config = getPackageConfig(require(pkgPath), operation);
+        const config = getPackageConfig(require(pkgPath));
         const user = git.getUsername();
         if (config.restrictions['skip-users'].indexOf(user) >= 0) {
           console.log(`User ${user} does not need to run ${operation} tasks in ${pkg.name}, moving on...`);
@@ -142,7 +141,7 @@ function run(operation, fileList) {
         }
         const filePattern = buildFilePattern(config.restrictions, pkg.relative);
         const files = (typeof fileList === 'boolean') ? fileList : fileList.some(file => filePattern.exec(file.toString().trim()));
-        runTasks(config, pkg, files);
+        runTasks(config[operation], pkg, files);
       } catch (e) {
         if (e instanceof handlers.RunTaskError) {
           // We want to stop the process immediately with a falsy exit code if the error comes from running a task
