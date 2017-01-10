@@ -1,0 +1,65 @@
+{
+  "name": "npm-git-hooks",
+  "version": "1.0.0",
+  "description": "Git hooks for NPM projects",
+  "main": "src/npm-git-hooks.js",
+  "bin": {
+    "post-checkout": "./bin/post-checkout",
+    "post-merge": "./bin/post-merge",
+    "post-commit": "./bin/post-commit",
+    "pre-commit": "./bin/pre-commit",
+    "pre-push": "./bin/pre-push"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "bluebird": "^3.4.7",
+    "shelljs": "^0.7.5"
+  },
+  "devDependencies": {
+    "eslint": "^2.0.0-rc.1"
+  },
+  "scripts": {
+    "postinstall": "node src/install.js",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ripley511/npm-git-hooks.git"
+  },
+  "keywords": [
+    "NPM",
+    "GIT",
+    "Hooks"
+  ],
+  "author": "Ripley511",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ripley511/npm-git-hooks/issues"
+  },
+  "homepage": "https://github.com/Ripley511/npm-git-hooks#readme",
+  "npm-git-hooks": {
+    "enabled": true,
+    "restrictions": {
+      "fileTypes": [],
+      "folders": [],
+      "skip-users": []
+    },
+    "post-checkout": {
+      "tasks": []
+    },
+    "post-commit": {
+      "tasks": []
+    },
+    "post-merge": {
+      "tasks": []
+    },
+    "pre-commit": {
+      "tasks": []
+    },
+    "pre-push": {
+      "tasks": []
+    }
+  }
+}

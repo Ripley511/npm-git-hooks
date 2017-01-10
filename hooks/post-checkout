@@ -1,0 +1,21 @@
+#!/bin/sh
+
+GIT_ROOT=`git rev-parse --show-toplevel`
+PACKAGES=`cd $GIT_ROOT && find . -name package.json | grep -v node_modules | grep -v bower_components | grep -v vendor`
+
+if [ -z "$PACKAGES" ]; then
+  echo "Cannot find any package.json file in this repository, please run 'npm init' first"
+  exit -1
+fi
+
+for package in $PACKAGES
+do
+  cd $GIT_ROOT
+  DIRECTORY=$(dirname $package)/node_modules
+  if [ ! -d "$DIRECTORY" ]; then
+    echo "Cannot find node_modules folder, please run 'npm install' first in $(dirname $package)"
+    exit -1
+  fi
+
+  cd $DIRECTORY && ./.bin/post-checkout "$@"
+done

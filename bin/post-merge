@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+
+const handlers = require('../lib/handlers');
+const run = require('../src/npm-git-hooks').run;
+
+run('post-merge', true)
+  .then(handlers.successCallback)
+  .catch(handlers.errorCallback);

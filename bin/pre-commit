@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+
+const git = require('../lib/git');
+const handlers = require('../lib/handlers');
+const run = require('../src/npm-git-hooks').run;
+
+let fileList;
+
+try {
+  // Get the repository path
+  fileList = git.getStagedFiles();
+} catch (e) {
+  // If the error comes from git, stop the script and exit with error status code
+  console.error('Something went wrong while retrieving your git information, exiting...');
+  process.exit(1);
+}
+
+run('pre-commit', fileList)
+  .then(handlers.successCallback)
+  .catch(handlers.errorCallback);
