@@ -152,10 +152,10 @@ function run(operation, fileList) {
       } else {
         // Otherwise let the errorCallback deal with the list of potential errors
         errors.push(e);
-        return;
       }
     }
   });
+
   if (errors.length) {
     handlers.errorCallback(errors);
   } else {
