@@ -123,8 +123,10 @@ function runTasks(config, pkg, files) {
 function run(operation, fileList) {
   const repoPath = git.getRootDir();
   const errors = [];
+  const packages = findAllPackages(repoPath);
 
-  findAllPackages(repoPath).forEach(pkg => {
+  for (let i = 0; i < packages.length; i += 1) {
+    const pkg = packages[i];
     try {
       // Launch tasks for every package found before pushing
       const pkgPath = utils.resolve(pkg.absolute, 'package.json');
@@ -154,12 +156,11 @@ function run(operation, fileList) {
         errors.push(e);
       }
     }
-  });
+  }
 
   if (errors.length) {
     handlers.errorCallback(errors);
   } else {
-    console.log('success here');
     handlers.successCallback(operation);
   }
 }
