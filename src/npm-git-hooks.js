@@ -159,6 +159,7 @@ function run(operation, fileList) {
   if (errors.length) {
     handlers.errorCallback(errors);
   } else {
+    console.log('success here');
     handlers.successCallback(operation);
   }
 }
