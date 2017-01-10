@@ -36,8 +36,8 @@ function findAllPackages(root) {
  * @param {String} hook
  * @return {Object} config
  */
-function getPackageConfig(pkg, hook) {
-  const config = pkg && pkg['npm-git-hooks'] && (hook ? pkg['npm-git-hooks'][hook] : true);
+function getPackageConfig(pkg) {
+  const config = pkg && pkg['npm-git-hooks'];
   if (!config) {
     throw new handlers.NoConfigError(`No config was found for ${pkg.name} project`);
   }
