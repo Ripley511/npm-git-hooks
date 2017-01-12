@@ -154,13 +154,12 @@ function run(operation, fileList) {
       } else {
         // Otherwise let the errorCallback deal with the list of potential errors
         errors.push(e);
+        handlers.errorCallback([e]);
       }
     }
   }
 
-  if (errors.length) {
-    handlers.errorCallback(errors);
-  } else {
+  if (!errors.length) {
     handlers.successCallback(operation);
   }
 }
