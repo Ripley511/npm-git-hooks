@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const git = require('../lib/git');
+const handlers = require('../lib/handlers');
 
 let fileList;
 
@@ -8,9 +9,14 @@ try {
   // Get the repository path
   fileList = git.getStagedFiles();
 } catch (e) {
-  // If the error comes from git, stop the script and exit with error status code
-  console.error('Something went wrong while retrieving your git information, exiting...');
-  process.exit(1);
+  if (e instanceof handlers.NoStagedFileError) {
+    console.log('No staged files to commit, exiting...');
+    process.exit(0);
+  } else {
+    // If the error comes from git, stop the script and exit with error status code
+    console.error('Something went wrong while retrieving your git information, exiting...');
+    process.exit(1);
+  }
 }
 
 require('../src/npm-git-hooks').run('pre-commit', fileList);
