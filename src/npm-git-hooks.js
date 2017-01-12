@@ -159,7 +159,7 @@ function run(operation, fileList) {
     }
   }
 
-  if (!errors.length) {
+  if (errors.length) {
     handlers.successCallback(operation);
   }
 }
