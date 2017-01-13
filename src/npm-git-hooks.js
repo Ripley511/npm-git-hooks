@@ -125,6 +125,7 @@ function run(operation, fileList) {
   const repoPath = git.getRootDir();
   const errors = [];
   const packages = findAllPackages(repoPath);
+  console.log(packages);
 
   for (let i = 0; i < packages.length; i += 1) {
     const pkg = packages[i];
