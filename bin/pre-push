@@ -1,17 +1,10 @@
 #!/usr/bin/env node
 
 const git = require('../lib/git');
-console.log(process.argv);
 let fileList;
 
 try {
-  // Get the remote and branch names
-  const remote = process.argv[2] || 'origin';
-  const branch = git.getBranch();
-  // Check if an upstream is configured
-  const upstream = git.checkUpstream(remote, branch);
-  // Check if there are any commit to push to the upstream
-  fileList = git.getCommitedFiles(remote, branch, upstream);
+  fileList = git.getCommitedFiles();
 } catch (e) {
   // If the error comes from git, stop the script and exit with error status code
   console.error('Something went wrong while retrieving your git information, exiting...');
