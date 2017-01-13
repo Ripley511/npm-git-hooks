@@ -128,7 +128,6 @@ function run(operation, fileList) {
   for (let i = 0; i < packages.length; i += 1) {
     const pkg = packages[i];
     try {
-      // Launch tasks for every package found before pushing
       const pkgPath = utils.resolve(pkg.absolute, 'package.json');
       const config = getPackageConfig(require(pkgPath));
       const user = git.getUsername();
@@ -159,7 +158,7 @@ function run(operation, fileList) {
     }
   }
 
-  if (errors.length) {
+  if (!errors.length) {
     handlers.successCallback(operation);
   }
 }
