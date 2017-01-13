@@ -104,7 +104,6 @@ function runTask(task, pkg) {
  * @param {Boolean} files (are there any files where we need to run a task?)
  */
 function runTasks(config, pkg, files) {
-  console.log(config);
   if (files && config.tasks && config.tasks.length) {
     config.tasks.forEach(task => runTask(task, pkg));
   } else if (files) {
@@ -131,6 +130,7 @@ function run(operation, fileList) {
     try {
       const pkgPath = utils.resolve(pkg.absolute, 'package.json');
       const config = getPackageConfig(require(pkgPath));
+      console.log(config);
       const user = git.getUsername();
       if (config.restrictions['skip-users'].indexOf(user) >= 0) {
         console.log(`User ${user} does not need to run ${operation} tasks in ${pkg.name}, moving on...`);
