@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const git = require('../lib/git');
-
+console.log(process.argv);
 let fileList;
 
 try {
