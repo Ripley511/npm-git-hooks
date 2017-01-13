@@ -59,7 +59,7 @@
       "tasks": ["echo pre-commit"]
     },
     "pre-push": {
-      "tasks": []
+      "tasks": ["echo pre-push"]
     }
   }
 }
