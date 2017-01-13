@@ -131,6 +131,7 @@ function run(operation, fileList) {
     try {
       const pkgPath = utils.resolve(pkg.absolute, 'package.json');
       const config = getPackageConfig(require(pkgPath));
+      console.log(operation, config[operation]);
       const user = git.getUsername();
       if (config.restrictions['skip-users'].indexOf(user) >= 0) {
         console.log(`User ${user} does not need to run ${operation} tasks in ${pkg.name}, moving on...`);
