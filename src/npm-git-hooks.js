@@ -85,9 +85,9 @@ function runTask(task, pkg) {
   try {
     // Launch the task with i/o set to default shell
     process.chdir(pkg.absolute);
-    console.log('\n**********');
+    console.log('\n*************');
     console.log(`npm-git-hooks: RUNNING: "${task}" in ${pkg.absolute}`);
-    console.log('**********\n');
+    console.log('*************\n');
     shell.exec(task, {'stdio': [0, 1, 2]});
   } catch (e) {
     throw new handlers.RunTaskError(task, pkg.name);
