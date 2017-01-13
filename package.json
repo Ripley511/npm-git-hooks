@@ -47,7 +47,7 @@
       "skip-users": []
     },
     "post-checkout": {
-      "tasks": []
+      "tasks": ["echo post-checkout"]
     },
     "post-commit": {
       "tasks": []
