@@ -38,7 +38,7 @@ function findAllPackages(root) {
 function getPackageConfig(pkg) {
   const config = pkg && pkg['npm-git-hooks'];
   if (!config) {
-    throw new handlers.NoConfigError(`No config was found for ${pkg.name} project`);
+    throw new handlers.NoConfigError(pkg.name);
   }
   return config;
 }
@@ -102,14 +102,15 @@ function runTask(task, pkg) {
  *  @prop {String} pkg.name
  *  @prop {String} pkg.absolute
  * @param {Boolean} files (are there any files where we need to run a task?)
+ * @param {String} operation
  */
-function runTasks(config, pkg, files) {
+function runTasks(config, pkg, files, operation) {
   if (files && config.tasks && config.tasks.length) {
     config.tasks.forEach(task => runTask(task, pkg));
   } else if (files) {
-    throw new handlers.NoTaskError(`No tasks were found for project ${pkg.name}, moving on...`);
+    throw new handlers.NoTaskError(operation, pkg.name);
   } else {
-    throw new handlers.NoFileError(`No file matches the specified extensions in project ${pkg.name}, moving on...`);
+    throw new handlers.NoFileError(operation, pkg.name);
   }
 }
 
@@ -121,7 +122,6 @@ function runTasks(config, pkg, files) {
  * @return {Promise}
  */
 function run(operation, fileList) {
-  console.log(operation);
   const repoPath = git.getRootDir();
   const errors = [];
   const packages = findAllPackages(repoPath);
