@@ -104,6 +104,7 @@ function runTask(task, pkg) {
  * @param {Boolean} files (are there any files where we need to run a task?)
  */
 function runTasks(config, pkg, files) {
+  console.log(config);
   if (files && config.tasks && config.tasks.length) {
     config.tasks.forEach(task => runTask(task, pkg));
   } else if (files) {
