@@ -141,7 +141,7 @@ function run(operation, fileList) {
       }
       const filePattern = buildFilePattern(config.restrictions, pkg.relative);
       const files = (typeof fileList === 'boolean') ? fileList : fileList.some(file => filePattern.exec(file.toString().trim()));
-      runTasks(config[operation], pkg, files);
+      runTasks(config[operation], pkg, files, operation);
     } catch (e) {
       if (e instanceof handlers.RunTaskError) {
         // We want to stop the process immediately with a falsy exit code if the error comes from running a task
