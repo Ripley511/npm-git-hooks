@@ -123,7 +123,6 @@ function runTasks(config, pkg, files, operation) {
  */
 function run(operation, fileList) {
   const repoPath = git.getRootDir();
-  console.log(repoPath);
   const errors = [];
   const packages = findAllPackages(repoPath);
 
