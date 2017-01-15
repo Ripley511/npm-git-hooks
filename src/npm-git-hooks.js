@@ -129,7 +129,12 @@ function runTask(task, pkg) {
  * @return {Promise}
  */
 function runTasks(config, operation) {
-  return Promise.each(config[operation], task => runTask(task, config.pkg));
+  const tasks = config[operation];
+  if (tasks && tasks.length) {
+    return Promise.each(tasks, task => runTask(task, config.pkg));
+  } else {
+    return Promise.reject(new handlers.NoTaskError(config.pkg.name, operation));
+  }
 }
 
 /**
