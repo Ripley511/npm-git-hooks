@@ -1,23 +1,26 @@
 'use strict';
 
 const shell = require('shelljs');
+const colors = require('colors');
 
 const handlers = require('../lib/handlers');
 const utils = require('../lib/utils');
 const git = require('../lib/git');
+const Promise = require('bluebird');
+const user = git.getUsername();
 
 module.exports = {run};
 
 /**
  * @method findAllPackages(repoPath)
  * @desc finds all the packages (package.json) in the repository, from root to subfolders (excluding all external packages)
- * @param {String} root (absolute path to the repository folder)
  * @return {Array<Object>} list of package objects
- * @prop {String} package.name (name of the package.json folder)
- * @prop {String} package.absolute (full absolute path to package.json from root)
- * @prop {String} package.relative (relative path to package.json folder from root)
+ *** @prop {String} package.name (name of the package.json folder)
+ *** @prop {String} package.absolute (full absolute path to package.json from root)
+ *** @prop {String} package.relative (relative path to package.json folder from root)
  */
-function findAllPackages(root) {
+function findAllPackages() {
+  const root = git.getRootDir();
   return utils.scandir(root, {pattern: ['package.json'], exclude: ['node_modules']})
     .filter(dir => Boolean(dir))
     .map(dir => {
@@ -29,49 +32,66 @@ function findAllPackages(root) {
 }
 
 /**
- * @method getPackageConfig(json, project)
+ * @callback mapPackageConfig(pkg)
  * @desc get the configuration object from package.json for npm-git-hooks tasks and fileTypes
- * @param {JSON} pkg
- * @param {String} hook
+ * @param {Object} pkg
  * @return {Object} config
  */
-function getPackageConfig(pkg) {
-  const config = pkg && pkg['npm-git-hooks'];
+function mapPackageConfig(pkg) {
+  const json = require(utils.resolve(pkg.absolute, 'package.json'));
+  const config = json && json['npm-git-hooks'];
   if (!config) {
     throw new handlers.NoConfigError(pkg.name);
   }
+  config.pkg = pkg;
+  config.enabled = (typeof config.enabled === 'undefined') ? true : config.enabled;
   return config;
 }
 
 /**
- * @method buildFilePattern(config, relative)
- * @desc build a file pattern according to fileTypes defined in the 'npm-git-hooks' property of package.json
- * @param {Object} config (the config property extracted from package.json)
- *  @prop {Array<String>} restrictions.folders
- *  @prop {Array<String>} restrictions.fileTypes
- * @param {String} relative (relative path to project folder)
- * @return {RegExp} regex
- */
-function buildFilePattern(restrictions, relative) {
-  relative = relative[relative.length - 1] === '/' ? relative.substr(0, relative.length - 1) : relative;
-  let pattern = `(?:.+${relative}\\/)?`;
-  let done = false;
-  if (restrictions) {
-    if (restrictions.folders) {
-      const folders = restrictions.folders.map(f => {
-        f = f[f.length - 1] === '/' ? f : `${f}/`;
-        return f.replace(/^\.\//, '').replace('/', '\\/');
-      });
-      pattern += `(?:${folders.join(`|`)})`;
-    }
-    if (restrictions.fileTypes) {
-      pattern += `.+\\.(?:${restrictions.fileTypes.join(`\\s+\\||`)})`;
-      done = true;
-    }
+* @callback skipPackage(config)
+* @desc checks if there is a reason to skip running hook on a package
+* @param {Object} config
+*  @prop {Array} config['skip-users']
+*  @prop {Boolean} config.enabled
+*  @prop {Object} config.pkg
+*  @prop {String} config.pkg.name
+* @return {Boolean}
+*/
+function skipPackage(config) {
+  if (config['skip-users'].indexOf(user) >= 0) {
+    console.log(`${colors.inverse('npm-git-hooks')} ${colors.cyan.inverse('SKIP')}
+    User ${user} does not need to run tasks for project ${config.pkg.name}, moving on...`);
+    return false;
+  } else if (!config.enabled) {
+    console.log(`${colors.inverse('npm-git-hooks')} ${colors.cyan.inverse('SKIP')}
+    Git hooks disabled for project ${config.pkg.name}, moving on...`);
+    return false;
   }
-  pattern += (done) ? '' : `.+`;
-  return new RegExp(pattern, 'i');
+  return true;
 }
+
+/**
+ * @callback fileMatch(config)
+ * @desc checks if files from index matches the restrictions from config
+ * @param {Object} config
+ * @param {String} operation
+ * @return {Boolean}
+ */
+function fileMatch(config, operation) {
+  if (operation === 'pre-push' || operation === 'pre-commit') {
+    const filePattern = utils.buildFilePattern(config);
+    let fileList;
+    if (operation === 'pre-commit') {
+      fileList = git.getStagedFiles()
+    } else {
+      fileList = git.getCommitedFiles()
+    }
+    return fileList.some(file => filePattern.exec(file.toString().trim()));
+  }
+  return true;
+}
+
 
 /**
  * @method runTask(task, pkg)
@@ -80,37 +100,36 @@ function buildFilePattern(restrictions, relative) {
  * @param {Object} pkg (the package.json info object)
  *  @prop {String} pkg.name
  *  @prop {String} pkg.absolute
+ * @return {Promise}
  */
 function runTask(task, pkg) {
-  try {
-    // Launch the task with i/o set to default shell
+  return new Promise((resolve, reject) => {
     process.chdir(pkg.absolute);
-    console.log('\n*************');
-    console.log(`npm-git-hooks: RUNNING: "${task}" in ${pkg.absolute}`);
-    console.log('*************\n');
-    shell.exec(task, {'stdio': [0, 1, 2]});
-  } catch (e) {
-    throw new handlers.RunTaskError(task, pkg.name);
-  }
+    console.log(`${colors.inverse('npm-git-hooks')} ${colors.blue.inverse('RUNNING')} "${task}" in ${pkg.absolute}`);
+    shell.exec(task, {silent: false}, code => {
+      if (code === 0) {
+        resolve(pkg);
+      } else {
+        reject(new handlers.RunTaskError(task, pkg.name))
+      }
+    });
+  });
 }
 
 /**
  * @method runTasks(files, config, pkg)
  * @param {Object} config (the config object extracted from package.json)
- *  @prop {Array<String>} config.tasks (list of commands to run)
- * @param {Object} pkg (the package.json info object)
- *  @prop {String} pkg.name
- *  @prop {String} pkg.absolute
- * @param {Boolean} files (are there any files where we need to run a task?)
+ *  @prop {Array<String>} config[operation].tasks (list of commands to run)
+ *  @prop {Object} config.pkg
  * @param {String} operation
+ * @return {Promise}
  */
-function runTasks(config, pkg, files, operation) {
-  if (files && config.tasks && config.tasks.length) {
-    config.tasks.forEach(task => runTask(task, pkg));
-  } else if (files) {
-    throw new handlers.NoTaskError(operation, pkg.name);
+function runTasks(config, operation) {
+  const tasks = config[operation];
+  if (tasks && tasks.length) {
+    return Promise.each(tasks, task => runTask(task, config.pkg));
   } else {
-    throw new handlers.NoFileError(operation, pkg.name);
+    throw new handlers.NoTaskError(config.pkg.name);
   }
 }
 
@@ -118,48 +137,18 @@ function runTasks(config, pkg, files, operation) {
  * @method run(repoPath, fileList)
  * @description entry point for all hook scripts
  * @param {String} operation
- * @param {Array<String> || Boolean} fileList
+ * @param {Array<String>} fileList
  * @return {Promise}
  */
-function run(operation, fileList) {
-  const repoPath = git.getRootDir();
-  const errors = [];
-  const packages = findAllPackages(repoPath);
+function run(operation) {
+  const configs = findAllPackages()
+    .map(mapPackageConfig)
+    .filter(skipPackage)
+    .filter(config => fileMatch(config, operation));
 
-  for (let i = 0; i < packages.length; i += 1) {
-    const pkg = packages[i];
-    try {
-      const pkgPath = utils.resolve(pkg.absolute, 'package.json');
-      const config = getPackageConfig(require(pkgPath));
-      const user = git.getUsername();
-      if (config.restrictions['skip-users'].indexOf(user) >= 0) {
-        console.log(`User ${user} does not need to run ${operation} tasks in ${pkg.name}, moving on...`);
-        return;
-      } else if (!config.enabled) {
-        console.log(`Git hooks disabled for project ${pkg.name}, moving on...`);
-        return;
-      }
-      const filePattern = buildFilePattern(config.restrictions, pkg.relative);
-      const files = (typeof fileList === 'boolean') ? fileList : fileList.some(file => filePattern.exec(file.toString().trim()));
-      runTasks(config[operation], pkg, files, operation);
-    } catch (e) {
-      if (e instanceof handlers.RunTaskError) {
-        // We want to stop the process immediately with a falsy exit code if the error comes from running a task
-        console.error('\n*************');
-        console.error(e.message);
-        console.error('Stacktrace:\n');
-        console.error(e.stack);
-        console.error('*************\n');
-        process.exit(1);
-      } else {
-        // Otherwise let the errorCallback deal with the list of potential errors
-        errors.push(e);
-        handlers.errorCallback([e]);
-      }
-    }
-  }
-
-  if (!errors.length) {
-    handlers.successCallback(operation);
-  }
+  configs.forEach(config => {
+    runTasks(config, operation).then(() => {
+      handlers.successCallback(config.pkg);
+    }).catch(handlers.errorCallback);
+  });
 }
