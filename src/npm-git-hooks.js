@@ -81,11 +81,15 @@ function skipPackage(config) {
 function fileMatch(config, operation) {
   if (operation === 'pre-push' || operation === 'pre-commit') {
     const filePattern = utils.buildFilePattern(config);
-    let fileList;
-    if (operation === 'pre-commit') {
-      fileList = git.getStagedFiles()
-    } else {
-      fileList = git.getCommitedFiles()
+    let fileList = [];
+    try {
+      if (operation === 'pre-commit') {
+        fileList = git.getStagedFiles()
+      } else {
+        fileList = git.getCommitedFiles()
+      }
+    } catch (e) {
+      console.log(e.message);
     }
     return fileList.some(file => filePattern.exec(file.toString().trim()));
   }
@@ -129,7 +133,7 @@ function runTasks(config, operation) {
   if (tasks && tasks.length) {
     return Promise.each(tasks, task => runTask(task, config.pkg));
   } else {
-    throw new handlers.NoTaskError(config.pkg.name);
+    return Promise.reject(new handlers.NoTaskError(config.pkg.name));
   }
 }
 
