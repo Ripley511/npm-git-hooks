@@ -129,12 +129,7 @@ function runTask(task, pkg) {
  * @return {Promise}
  */
 function runTasks(config, operation) {
-  const tasks = config[operation];
-  if (tasks && tasks.length) {
-    return Promise.each(tasks, task => runTask(task, config.pkg));
-  } else {
-    return Promise.reject(new handlers.NoTaskError(config.pkg.name));
-  }
+  return Promise.each(config[operation], task => runTask(task, config.pkg));
 }
 
 /**
@@ -151,8 +146,8 @@ function run(operation) {
     .filter(config => fileMatch(config, operation));
 
   configs.forEach(config => {
-    runTasks(config, operation).then(() => {
-      handlers.successCallback(config.pkg);
+    runTasks(config, operation).then(tasks => {
+      handlers.successCallback(config.pkg, tasks);
     }).catch(handlers.errorCallback);
   });
 }
