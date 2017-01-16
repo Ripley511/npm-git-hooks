@@ -109,6 +109,7 @@ function checkCommitMsg(config) {
     const pattern = new RegExp(config['commit-msg']);
     return new Promise((resolve, reject) => {
       if (pattern.test(message)) {
+        console.log(`${colors.inverse('npm-git-hooks')} ${colors.green.inverse('SUCCESS')} ${colors.magenta('commit-msg')} Commit message matches given pattern`);
         resolve(['commit-msg']);
       } else {
         reject(new handlers.RunTaskError('commit-msg', config.pkg.name));
@@ -135,7 +136,7 @@ function runTask(task, pkg, operation) {
     console.log(`${colors.inverse('npm-git-hooks')} ${colors.blue.inverse('RUNNING')} ${colors.magenta(operation)} "${task}" in ${pkg.absolute}`);
     shell.exec(task, {silent: false}, code => {
       if (code === 0) {
-        console.log(`${colors.inverse('npm-git-hooks')} ${colors.green.inverse('SUCCESS')} ${colors.magenta(operation)} "${task}" in ${pkg.absolute}\n`)
+        console.log(`${colors.inverse('npm-git-hooks')} ${colors.green.inverse('SUCCESS')} ${colors.magenta(operation)} "${task}"\n`)
         resolve(pkg);
       } else {
         reject(new handlers.RunTaskError(task, pkg.name, operation))
@@ -153,14 +154,14 @@ function runTask(task, pkg, operation) {
  * @return {Promise}
  */
 function runTasks(config, operation) {
-  const tasks = config[operation];
+  const tasks = config[operation] || [];
   if (operation === 'commit-msg') {
     return checkCommitMsg(config);
   }
   if (tasks && tasks.length) {
     return Promise.each(tasks, task => runTask(task, config.pkg, operation));
   } else {
-    return Promise.reject(new handlers.NoTaskError(config.pkg.name, operation));
+    return Promise.resolve([]);
   }
 }
 
@@ -178,8 +179,8 @@ function run(operation) {
     .filter(config => fileMatch(config, operation));
 
   configs.forEach(config => {
-    runTasks(config, operation).then(() => {
-      handlers.successCallback(config.pkg, operation);
+    runTasks(config, operation).then(tasks => {
+      handlers.successCallback(config.pkg, operation, tasks);
     }).catch(handlers.errorCallback);
   });
 }
