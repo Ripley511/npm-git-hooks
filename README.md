@@ -31,8 +31,9 @@ You need to fill the 'npm-git-hooks' config object in you package.json file.
     "skip-users": ["jenkins"],
     "restrictions": {
       "fileTypes": ["js", "html"],
-      "folders": ["./src"]
+      "folders": ["src/app"]
     },
+    "commit-msg": ".+",
     "post-checkout": ["npm install"],
     "post-commit": [],
     "post-merge": [],
