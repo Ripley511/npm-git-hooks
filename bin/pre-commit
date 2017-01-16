@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require('../src/npm-git-hooks').run('pre-commit');
+require('../src/main').run('pre-commit');

@@ -77,10 +77,13 @@ function installHook(hook) {
         'skip-users': [],
       };
       hooks.forEach(hook => {
-        // Build an empty object for every existing hook
-        pkg['npm-git-hooks'][hook] = {
-          tasks: [],
-        };
+        if (hook === 'commit-msg') {
+          pkg['npm-git-hooks'][hook] = "";
+        } else {
+          pkg['npm-git-hooks'][hook] = {
+            tasks: [],
+          };
+        }
       });
       // Replace the old package.json file
       utils.writeToFile(pkgPath, JSON.stringify(pkg, null, 2));
@@ -103,6 +106,7 @@ function installHook(hook) {
     process.exit(1);
   }
 })([
+  'commit-msg',
   'post-checkout',
   'post-commit',
   'post-merge',

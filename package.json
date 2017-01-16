@@ -2,7 +2,7 @@
   "name": "npm-git-hooks",
   "version": "1.0.0",
   "description": "Git hooks for NPM projects",
-  "main": "src/npm-git-hooks.js",
+  "main": "src/main.js",
   "bin": {
     "post-checkout": "./bin/post-checkout",
     "post-merge": "./bin/post-merge",
@@ -47,6 +47,7 @@
       "fileTypes": [],
       "folders": []
     },
+    "commit-msg": ".+",
     "post-checkout": [
       "echo post-checkout",
       "echo test"

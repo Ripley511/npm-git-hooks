@@ -85,7 +85,7 @@ function fileMatch(config, operation) {
     try {
       if (operation === 'pre-commit') {
         fileList = git.getStagedFiles()
-      } else {
+      } else if (operation === 'pre-push') {
         fileList = git.getCommitedFiles()
       }
     } catch (e) {
@@ -96,6 +96,28 @@ function fileMatch(config, operation) {
   return true;
 }
 
+/**
+ * @method checkCommitMsg(config)
+ * @desc checks the commit message against a pattern from config
+ * @param {Object} config
+ *  @prop {String} config['commit-msg']
+ * @return {Promise}
+ */
+function checkCommitMsg(config) {
+  if (config['commit-msg']) {
+    const message = git.getCommitMessage();
+    const pattern = new RegExp(config['commit-msg']);
+    return new Promise((resolve, reject) => {
+      if (pattern.test(message)) {
+        resolve(['commit-msg']);
+      } else {
+        reject(new handlers.RunTaskError('commit-msg', config.pkg.name));
+      }
+    });
+  } else {
+    return Promise.resolve();
+  }
+}
 
 /**
  * @method runTask(task, pkg)
@@ -104,17 +126,19 @@ function fileMatch(config, operation) {
  * @param {Object} pkg (the package.json info object)
  *  @prop {String} pkg.name
  *  @prop {String} pkg.absolute
+ * @param {String} operation
  * @return {Promise}
  */
-function runTask(task, pkg) {
+function runTask(task, pkg, operation) {
   return new Promise((resolve, reject) => {
     process.chdir(pkg.absolute);
-    console.log(`${colors.inverse('npm-git-hooks')} ${colors.blue.inverse('RUNNING')} "${task}" in ${pkg.absolute}`);
+    console.log(`${colors.inverse('npm-git-hooks')} ${colors.blue.inverse('RUNNING')} ${colors.magenta(operation)} "${task}" in ${pkg.absolute}`);
     shell.exec(task, {silent: false}, code => {
       if (code === 0) {
+        console.log(`${colors.inverse('npm-git-hooks')} ${colors.green.inverse('SUCCESS')} ${colors.magenta(operation)} "${task}" in ${pkg.absolute}\n`)
         resolve(pkg);
       } else {
-        reject(new handlers.RunTaskError(task, pkg.name))
+        reject(new handlers.RunTaskError(task, pkg.name, operation))
       }
     });
   });
@@ -130,8 +154,11 @@ function runTask(task, pkg) {
  */
 function runTasks(config, operation) {
   const tasks = config[operation];
+  if (operation === 'commit-msg') {
+    return checkCommitMsg(config);
+  }
   if (tasks && tasks.length) {
-    return Promise.each(tasks, task => runTask(task, config.pkg));
+    return Promise.each(tasks, task => runTask(task, config.pkg, operation));
   } else {
     return Promise.reject(new handlers.NoTaskError(config.pkg.name, operation));
   }
@@ -151,8 +178,8 @@ function run(operation) {
     .filter(config => fileMatch(config, operation));
 
   configs.forEach(config => {
-    runTasks(config, operation).then(tasks => {
-      handlers.successCallback(config.pkg, tasks);
+    runTasks(config, operation).then(() => {
+      handlers.successCallback(config.pkg, operation);
     }).catch(handlers.errorCallback);
   });
 }
